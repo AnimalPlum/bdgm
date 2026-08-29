@@ -40,7 +40,7 @@ bdgm-build path/to/disc/root/ image-bd.bin
 This will create a UDF 2.50 image for burning **Blu-Ray discs**.
 **To make a DVD or CD image, use the `--dvd` flag to use UDF 2.01 instead**:
 ```
-bdgm-build path/to/disc/root image-dvd.bin
+bdgm-build path/to/disc/root --dvd image-dvd.bin
 ```
 
 To burn the image, use any image burning software such as ImgBurn, K3b or xorriso.  
