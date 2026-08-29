@@ -1,6 +1,6 @@
 # Blu-Ray Disc Game
 
-BDGM is a UDF-based specification for storing and playing cross-platform games on optical drives (CD, DVD, Blu-Ray).
+BDGM is a UDF-based specification for storing and playing cross-platform games on optical discs (CD, DVD, Blu-Ray).
 See specification at <https://github.com/yesser-studios/bdgm/blob/main/spec.md>.
 
 ## `bdgm-play`
