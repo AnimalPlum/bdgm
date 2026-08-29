@@ -9,7 +9,7 @@ use hadris_udf::write::{SimpleDir, SimpleFile, UdfWriteOptions, UdfWriter};
 
 use crate::{
     error::{BDGMError, EntryError},
-    game::Game,
+    game::{Game, ValidatedGame},
 };
 
 #[derive(Debug, Clone)]
@@ -129,8 +129,9 @@ impl Entry {
                 let mut contents = String::new();
                 manifest.read_to_string(&mut contents)?;
 
-                let game = Game::from_str(&contents).map_err(|_| BDGMError::DiscFileInvalid)?;
-                let executable = game.executable;
+                let game = Game::from_str(&contents)?;
+                let game = ValidatedGame::validate(game)?;
+                let executable = game.executable();
 
                 let mut app_dir_children = Vec::new();
                 bdgm_dir_children
@@ -150,12 +151,19 @@ impl Entry {
                 app_dir_children
                     .iter()
                     .find(|it| match it {
-                        Entry::File { source: _, path } => *path == executable,
+                        Entry::File { source: _, path } => *path == *executable,
                         _ => false,
                     })
-                    .ok_or(BDGMError::ExecutableMissing)?;
+                    .ok_or(BDGMError::ExecutableMissing(
+                        executable.to_string_lossy().into_owned(),
+                    ))?;
 
-                write_simple_dir(&self.to_simple_dir()?, game.name, output, revision)
+                write_simple_dir(
+                    &self.to_simple_dir()?,
+                    game.name().to_string(),
+                    output,
+                    revision,
+                )
             }
         }
     }

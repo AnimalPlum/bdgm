@@ -41,7 +41,7 @@ DISC.BDGM is a property file in the BDGM Properties Format (BPF):
         - The path must resolve to a regular file within `/BDGM/APP/` and must not resolve outside the directory.
         - Example: `executable=game.jar`
     - `args`: Arguments passed to the executable in a JSON array. If running through a runtime, these are often passed after ` -- `, depending on the runtime. Optional.
-    - `runtime_args`: Arguments passed to the runtime itself in a JSON array. For `windows`, these are resolved only if running on another operating system than Windows. Optional.
+    - `runtime_args`: Arguments passed to the runtime itself in a JSON array. For `windows`, these are resolved only if running on another operating system than Windows (and therefore running through Wine). Optional.
 
 `args` and `runtime_args` must be valid JSON arrays containing only string elements. Each element represents exactly one argument. No shell parsing is performed.
 

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::File, io::Read, process::Command, string::String};
 
-use bdgm::{error::BDGMError, game::Game};
+use bdgm::{error::BDGMError, game::Game, runtime::Runtime};
 use clap::Parser;
 use fs_extra::dir::{self, CopyOptions};
 use hadris_udf::UdfVolume;
@@ -88,16 +88,34 @@ pub(crate) fn run() -> anyhow::Result<()> {
     let game = Game::from_str(&contents)?;
 
     let app_dir_path = args.location.join("BDGM").join("APP");
-    let executable_path = app_dir_path.join(&game.executable);
+    let executable_str =
+        game.executable
+            .ok_or(AppError::InvalidGameFile(BDGMError::MandatoryFieldMissing(
+                "executable".to_string(),
+            )))?;
+    let executable_path = app_dir_path.join(&executable_str);
 
     if !executable_path.try_exists()? {
-        return Err(BDGMError::ExecutableMissing.into());
+        return Err(AppError::InvalidGameFile(BDGMError::ExecutableMissing(
+            executable_path.to_string_lossy().into_owned(),
+        ))
+        .into());
     }
 
-    let game_dir = app_dirs.data_dir.join(&game.id);
-    let cache_dir = app_dirs.cache_dir.join(&game.id);
+    let id = game
+        .id
+        .ok_or(AppError::InvalidGameFile(BDGMError::MandatoryFieldMissing(
+            "id".to_string(),
+        )))?;
+    let game_dir = app_dirs.data_dir.join(&id);
+    let cache_dir = app_dirs.cache_dir.join(&id);
     let data_dir = game_dir.join("data");
-    let install_dir = game_dir.join("app").join(game.version);
+    let install_dir =
+        game_dir
+            .join("app")
+            .join(game.version.ok_or(AppError::InvalidGameFile(
+                BDGMError::MandatoryFieldMissing("version".to_string()),
+            ))?);
 
     if !install_dir.try_exists()? {
         println!("Copying files...");
@@ -120,11 +138,19 @@ pub(crate) fn run() -> anyhow::Result<()> {
 
     let runtime = args.runtime.map(|x| x.to_string_lossy().to_string());
 
-    let status = match game.runtime {
+    let runtime_str =
+        game.runtime
+            .ok_or(AppError::InvalidGameFile(BDGMError::MandatoryFieldMissing(
+                "runtime".to_string(),
+            )))?;
+
+    let status = match Runtime::from_str(&runtime_str)
+        .ok_or(AppError::UnrecognisedRuntime(runtime_str.to_string()))?
+    {
         bdgm::runtime::Runtime::Java => Command::new(runtime.as_deref().unwrap_or("java"))
             .args(game.runtime_args)
             .arg("--jar")
-            .arg(install_dir.join(game.executable))
+            .arg(install_dir.join(executable_str))
             .arg("--")
             .args(game.args)
             .envs(envvars)
@@ -132,7 +158,7 @@ pub(crate) fn run() -> anyhow::Result<()> {
             .status()?,
         bdgm::runtime::Runtime::Dotnet => Command::new(runtime.as_deref().unwrap_or("dotnet"))
             .args(game.runtime_args)
-            .arg(install_dir.join(game.executable))
+            .arg(install_dir.join(executable_str))
             .arg("--")
             .args(game.args)
             .envs(envvars)
@@ -140,7 +166,7 @@ pub(crate) fn run() -> anyhow::Result<()> {
             .status()?,
         bdgm::runtime::Runtime::Python => Command::new(runtime.as_deref().unwrap_or("python"))
             .args(game.runtime_args)
-            .arg(install_dir.join(game.executable))
+            .arg(install_dir.join(executable_str))
             .arg("--")
             .args(game.args)
             .envs(envvars)
@@ -148,7 +174,7 @@ pub(crate) fn run() -> anyhow::Result<()> {
             .status()?,
         bdgm::runtime::Runtime::Windows => {
             if cfg!(target_os = "windows") {
-                Command::new(install_dir.join(game.executable))
+                Command::new(install_dir.join(executable_str))
                     .args(game.args)
                     .envs(envvars)
                     .current_dir(&install_dir)
@@ -156,7 +182,7 @@ pub(crate) fn run() -> anyhow::Result<()> {
             } else {
                 Command::new(runtime.as_deref().unwrap_or("wine"))
                     .args(game.runtime_args)
-                    .arg(install_dir.join(game.executable))
+                    .arg(install_dir.join(executable_str))
                     .args(game.args)
                     .envs(envvars)
                     .env("WINEPREFIX", game_dir.join("wineprefix"))

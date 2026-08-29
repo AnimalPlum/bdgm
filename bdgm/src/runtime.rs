@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone, Copy)]
 pub enum Runtime {
     #[serde(rename = "java")]
     Java,
@@ -34,5 +34,15 @@ impl Runtime {
             "windows" => Some(Self::Windows),
             _ => None,
         }
+    }
+
+    pub fn display_all() -> String {
+        format!(
+            "{}, {}, {}, {}",
+            Self::Java,
+            Self::Dotnet,
+            Self::Python,
+            Self::Windows
+        )
     }
 }
