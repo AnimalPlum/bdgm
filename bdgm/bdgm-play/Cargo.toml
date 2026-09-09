@@ -16,6 +16,7 @@ platform-dirs = "0.3"
 tempfile = "3"
 fs_extra = "1"
 hadris-udf = { version = "2.1.0" }
+webbrowser = "1"
 windows-sys = { version = "0.61", features = [
     "Win32_Foundation",
     "Win32_System_IO",

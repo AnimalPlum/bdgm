@@ -172,6 +172,11 @@ pub(crate) fn run() -> anyhow::Result<()> {
             .envs(envvars)
             .current_dir(&install_dir)
             .status()?,
+        bdgm::runtime::Runtime::HTML => {
+            let html_path = install_dir.join(executable_str);
+            webbrowser::open(html_path.to_string_lossy().as_ref())?;
+            std::process::ExitStatus::default()
+        }
         bdgm::runtime::Runtime::Windows => {
             if cfg!(target_os = "windows") {
                 Command::new(install_dir.join(executable_str))

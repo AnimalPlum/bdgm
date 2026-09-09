@@ -225,7 +225,9 @@ impl ValidatedGame {
         }
 
         if let Some(runtime) = &runtime {
-            if *runtime != Runtime::Windows && runtime_version.is_none() {
+            if (*runtime != Runtime::Windows || *runtime != Runtime::HTML)
+                && runtime_version.is_none()
+            {
                 errors.add(BDGMError::MandatoryFieldMissing(
                     "runtime_version".to_string(),
                 ));
