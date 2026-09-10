@@ -306,6 +306,10 @@ impl ValidatedGame {
         })
     }
 
+    pub fn bdgm_version(&self) -> &str {
+        &self.bdgm_version
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }
