@@ -86,7 +86,7 @@ The player is an application installed on the user's operating system that reads
 - Cache directory may be emptied or replaced before running a game with a different version.
 - If possible by the operating system, the player may provide write redirection to the data directory for games that write data into the installation or current working directory.
 - The player must persist `html` runtime server ports per-game. No two games may have the same port.
-- If the persistent port is unavailable, notify the user and refuse to serve the game unless the user explicitly acknowledges their data will be unavailable until the correct port is freed and that data saved on the fallback port may not be persisted.
+- If the persistent port is unavailable, notify the user and refuse to serve the game. The player may let the user explicitly acknowledge that their data will be unavailable until the correct port is freed and that data saved on the fallback port may not be persisted.
     - If the persisted port is unavailable and the user agrees, the player must temporarily use a fallback port. Future launches will use the persisted port once available.
 - The `html` runtime server must be bound to `127.0.0.1`.
 - The player must communicate to the user how to stop the `html` runtime server. This can be done, for example, via Ctrl-C, a custom keybind, or appropriate GUI.
