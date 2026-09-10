@@ -10,14 +10,19 @@ use hadris_udf::UdfVolume;
 use platform_dirs::AppDirs;
 use tempfile::tempdir;
 
-use crate::{args::Args, dump::extract_udf_dir, error::AppError};
+use crate::{
+    args::Args,
+    dump::extract_udf_dir,
+    error::AppError,
+    server::{create_listener, serve},
+};
 
 #[cfg(windows)]
 use crate::dump::dump_disc;
 #[cfg(windows)]
 use tempfile::NamedTempFile;
 
-pub(crate) fn run() -> anyhow::Result<()> {
+pub(crate) async fn run() -> anyhow::Result<()> {
     let app_dirs = AppDirs::new(Some("bdgm-play"), true).ok_or(AppError::NoAppDirs)?;
     let extract_dir = tempdir()?;
 
@@ -157,8 +162,16 @@ pub(crate) fn run() -> anyhow::Result<()> {
             .current_dir(&install_dir)
             .status()?,
         bdgm::runtime::Runtime::HTML => {
-            let html_path = install_dir.join(executable_str);
-            webbrowser::open(html_path.to_string_lossy().as_ref())?;
+            let listener = create_listener(None).await?;
+            let address = format!(
+                "http://{}/{}",
+                listener.local_addr()?,
+                executable_str.to_string_lossy()
+            );
+            let res = webbrowser::open(&address);
+            res?;
+            println!("Running server, press Ctrl + C to stop.");
+            serve(listener, install_dir).await?;
             std::process::ExitStatus::default()
         }
         bdgm::runtime::Runtime::Windows => {
