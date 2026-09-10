@@ -25,3 +25,10 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
       working-directory: ./bdgm
+
+    - name: Build bdgm-play
+      run: cargo build
+      working-directory: ./bdgm/bdgm-play
+    - name: Build bdgm-build
+      run: cargo build
+      working-directory: ./bdgm/bdgm-build
