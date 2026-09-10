@@ -81,14 +81,18 @@ impl Game {
         let mut result = Game::new();
 
         let mut lines = str.lines();
-        result.bdgm_version = if let Some(header) = lines.next() {
-            let mut split = header.splitn(2, '/');
-            if split.nth(0).is_none_or(|x| x != "BDGM") {
-                return Err(Error::from(ParserError::InvalidHeader));
+        result.bdgm_version = match lines.next() {
+            Some(header) => {
+                let split: Vec<_> = header.split('/').collect();
+                if split.get(0).is_none_or(|x| *x != "BDGM") {
+                    return Err(Error::from(ParserError::InvalidHeader));
+                }
+                match split.get(1) {
+                    Some(x) => Some(x.to_string()),
+                    None => None,
+                }
             }
-            split.nth(1).map_or(None, |x| Some(x.to_string()))
-        } else {
-            None
+            None => None,
         };
 
         for line in lines {
