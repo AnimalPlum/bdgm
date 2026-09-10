@@ -98,7 +98,9 @@ pub(crate) async fn run() -> anyhow::Result<()> {
 
     let app_dir_path = args.location.join("BDGM").join("APP");
     let executable_str = game.executable();
-    let executable_path = app_dir_path.join(&executable_str);
+    let executable_path = app_dir_path
+        .join(&executable_str)
+        .map_err(|e| AppError::InvalidGameFile(e))?;
 
     if !executable_path.try_exists()? {
         return Err(AppError::InvalidGameFile(BDGMError::ExecutableMissing(
