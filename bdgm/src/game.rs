@@ -84,7 +84,7 @@ impl Game {
         result.bdgm_version = match lines.next() {
             Some(header) => {
                 let split: Vec<_> = header.split('/').collect();
-                if split.get(0).is_none_or(|x| *x != "BDGM") {
+                if split.len() != 2 || split.get(0).is_none_or(|x| *x != "BDGM") {
                     return Err(Error::from(ParserError::InvalidHeader));
                 }
                 match split.get(1) {
