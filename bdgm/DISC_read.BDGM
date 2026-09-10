@@ -1,0 +1,9 @@
+BDGM/1.1
+name=test
+id=com.example.test
+version=1.0.0
+executable=game.exe
+args=[]
+runtime=windows
+runtime_version=10
+runtime_args=[]

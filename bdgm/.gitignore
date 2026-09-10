@@ -1,3 +1,4 @@
 target/
 *.BDGM
 *.udf
+!DISC_read.BDGM
