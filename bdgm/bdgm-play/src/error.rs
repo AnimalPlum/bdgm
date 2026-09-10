@@ -7,7 +7,6 @@ use thiserror::Error;
 pub(crate) enum AppError {
     NoAppDirs,
     InvalidGameFile(BDGMError),
-    UnrecognisedRuntime(String),
 }
 
 impl Display for AppError {
@@ -15,7 +14,6 @@ impl Display for AppError {
         match self {
             AppError::NoAppDirs => write!(f, "Failed to parse app directories"),
             AppError::InvalidGameFile(e) => write!(f, "The disc manifest is invalid: {e}"),
-            AppError::UnrecognisedRuntime(r) => write!(f, "Unknown runtime: {r}"),
         }
     }
 }
