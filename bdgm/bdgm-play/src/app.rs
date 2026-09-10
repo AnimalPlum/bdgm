@@ -14,7 +14,7 @@ use crate::{
     args::Args,
     dump::extract_udf_dir,
     error::AppError,
-    server::{create_listener, serve},
+    server::{create_listener, load_ports, save_ports, serve},
 };
 
 #[cfg(windows)]
@@ -162,16 +162,42 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             .current_dir(&install_dir)
             .status()?,
         bdgm::runtime::Runtime::HTML => {
-            let listener = create_listener(None).await?;
+            let mut ports = load_ports(&app_dirs.data_dir)?;
+            let port = ports.get_by_left(game.id());
+
+            let listener = match port {
+                Some(port) => create_listener(Some(*port)).await?,
+                None => {
+                    let mut listener = create_listener(None).await?;
+                    let mut port = listener.local_addr()?.port();
+
+                    let mut tries = 0;
+                    while ports.get_by_right(&&port).is_some() {
+                        listener = create_listener(None).await?;
+                        port = listener.local_addr()?.port();
+
+                        tries += 1;
+                        if tries >= 5000 {
+                            return Err(AppError::CouldNotFindUnclaimedPort.into());
+                        }
+                    }
+
+                    ports.insert(game.id().to_string(), listener.local_addr()?.port());
+                    save_ports(ports, &app_dirs.data_dir)?;
+                    listener
+                }
+            };
+
             let address = format!(
                 "http://{}/{}",
                 listener.local_addr()?,
                 executable_str.to_string_lossy()
             );
-            let res = webbrowser::open(&address);
-            res?;
+            webbrowser::open(&address)?;
+
             println!("Running server, press Ctrl + C to stop.");
             serve(listener, install_dir).await?;
+
             std::process::ExitStatus::default()
         }
         bdgm::runtime::Runtime::Windows => {

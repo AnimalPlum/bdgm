@@ -7,6 +7,7 @@ use thiserror::Error;
 pub(crate) enum AppError {
     NoAppDirs,
     InvalidGameFile(BDGMError),
+    CouldNotFindUnclaimedPort,
 }
 
 impl Display for AppError {
@@ -14,6 +15,9 @@ impl Display for AppError {
         match self {
             AppError::NoAppDirs => write!(f, "Failed to parse app directories"),
             AppError::InvalidGameFile(e) => write!(f, "The disc manifest is invalid: {e}"),
+            AppError::CouldNotFindUnclaimedPort => {
+                write!(f, "Could not find a port that hasn't been claimed yet")
+            }
         }
     }
 }
