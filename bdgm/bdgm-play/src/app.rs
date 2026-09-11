@@ -199,6 +199,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             println!("Opening {address}");
             webbrowser::open(&address)?;
 
+            drop(file);
             println!("Running server, press Ctrl + C to stop.");
             serve(listener, install_dir).await?;
 
