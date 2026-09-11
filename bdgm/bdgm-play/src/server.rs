@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::PathBuf,
+};
 
 use anyhow::{Context, Result};
 use axum::Router;
@@ -32,8 +36,17 @@ pub(crate) fn get_portlist_path(data_dir: &PathBuf) -> PathBuf {
 pub(crate) fn load_ports(data_dir: &PathBuf) -> Result<BiMap<String, u16>> {
     let path = get_portlist_path(data_dir);
 
-    match fs::read_to_string(path) {
-        Ok(json) => serde_json::from_str(&json).map_err(|e| e.into()),
+    if !path.exists() {
+        return Ok(BiMap::new());
+    }
+
+    let mut file = File::open(path)?;
+    let mut json = String::new();
+
+    file.lock_shared()?;
+
+    match file.read_to_string(&mut json) {
+        Ok(_) => serde_json::from_str(&json).map_err(|e| e.into()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(BiMap::new()),
         Err(e) => Err(e.into()),
     }
@@ -42,6 +55,10 @@ pub(crate) fn load_ports(data_dir: &PathBuf) -> Result<BiMap<String, u16>> {
 pub(crate) fn save_ports(ports: BiMap<String, u16>, data_dir: &PathBuf) -> Result<()> {
     let path = get_portlist_path(data_dir);
     let json = serde_json::to_string_pretty(&ports)?;
+    let mut file = File::options().write(true).create(true).open(path)?;
 
-    fs::write(path, json).map_err(|e| e.into())
+    file.lock()?;
+    write!(file, "{json}")?;
+
+    Ok(())
 }

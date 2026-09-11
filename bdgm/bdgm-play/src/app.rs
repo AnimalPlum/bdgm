@@ -162,6 +162,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             .current_dir(&install_dir)
             .status()?,
         bdgm::runtime::Runtime::HTML => {
+            println!("Reading saved ports...");
             let mut ports = load_ports(&app_dirs.data_dir)?;
             let port = ports.get_by_left(game.id());
 
@@ -183,6 +184,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
                     }
 
                     ports.insert(game.id().to_string(), listener.local_addr()?.port());
+                    println!("Persisting port {}...", listener.local_addr()?.port());
                     save_ports(ports, &app_dirs.data_dir)?;
                     listener
                 }
