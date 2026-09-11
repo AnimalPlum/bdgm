@@ -29,30 +29,11 @@ pub(crate) async fn serve(listener: TcpListener, directory: PathBuf) -> Result<(
     Ok(())
 }
 
-fn get_portlist_file_path(data_dir: &PathBuf) -> PathBuf {
-    data_dir.join("ports.json")
-}
-
-pub(crate) fn does_portlist_file_exist(data_dir: &PathBuf) -> bool {
-    let path = get_portlist_file_path(data_dir);
-    path.exists() && path.is_file()
-}
-
-pub(crate) struct PortlistFileResult {
-    pub file: File,
-    pub existed: bool,
-}
-
-pub(crate) fn get_portlist_file(data_dir: &PathBuf) -> Result<PortlistFileResult> {
-    let path = get_portlist_file_path(data_dir);
-    let existed = does_portlist_file_exist(data_dir);
-    let file = File::options()
-        .write(true)
-        .read(true)
-        .create(true)
-        .open(path)?;
+pub(crate) fn get_portlist_file(data_dir: &PathBuf) -> Result<File> {
+    let path = data_dir.join("ports.json");
+    let file = File::options().write(true).create(true).open(path)?;
     file.lock()?;
-    Ok(PortlistFileResult { file, existed })
+    Ok(file)
 }
 
 pub(crate) fn load_ports(file: &mut File) -> Result<BiMap<String, u16>> {

@@ -4,7 +4,6 @@ use bdgm::{
     error::BDGMError,
     game::{Game, ValidatedGame},
 };
-use bimap::BiMap;
 use clap::Parser;
 use fs_extra::dir::{self, CopyOptions};
 use hadris_udf::UdfVolume;
@@ -165,12 +164,8 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             .status()?,
         bdgm::runtime::Runtime::HTML => {
             println!("Reading saved ports...");
-            let mut portlist = get_portlist_file(&app_dirs.data_dir)?;
-            let mut ports = if portlist.existed {
-                load_ports(&mut portlist.file)?
-            } else {
-                BiMap::new()
-            };
+            let mut file = get_portlist_file(&app_dirs.data_dir)?;
+            let mut ports = load_ports(&mut file)?;
             let port = ports.get_by_left(game.id());
 
             let listener = match port {
@@ -192,7 +187,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
 
                     ports.insert(game.id().to_string(), listener.local_addr()?.port());
                     println!("Persisting port {}...", listener.local_addr()?.port());
-                    save_ports(ports, &mut portlist.file)?;
+                    save_ports(ports, &mut file)?;
                     listener
                 }
             };
@@ -204,7 +199,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             println!("Opening {address}");
             webbrowser::open(&address)?;
 
-            drop(portlist);
+            drop(file);
             println!("Running server, press Ctrl + C to stop.");
             serve(listener, install_dir).await?;
 
