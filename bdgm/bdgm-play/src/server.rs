@@ -29,22 +29,15 @@ pub(crate) async fn serve(listener: TcpListener, directory: PathBuf) -> Result<(
     Ok(())
 }
 
-pub(crate) fn get_portlist_path(data_dir: &PathBuf) -> PathBuf {
-    data_dir.join("ports.json")
+pub(crate) fn get_portlist_file(data_dir: &PathBuf) -> Result<File> {
+    let path = data_dir.join("ports.json");
+    let file = File::options().write(true).create(true).open(path)?;
+    file.lock()?;
+    Ok(file)
 }
 
-pub(crate) fn load_ports(data_dir: &PathBuf) -> Result<BiMap<String, u16>> {
-    let path = get_portlist_path(data_dir);
-
-    if !path.exists() {
-        return Ok(BiMap::new());
-    }
-
-    let mut file = File::open(path)?;
+pub(crate) fn load_ports(file: &mut File) -> Result<BiMap<String, u16>> {
     let mut json = String::new();
-
-    file.lock_shared()?;
-
     match file.read_to_string(&mut json) {
         Ok(_) => serde_json::from_str(&json).map_err(|e| e.into()),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(BiMap::new()),
@@ -52,13 +45,8 @@ pub(crate) fn load_ports(data_dir: &PathBuf) -> Result<BiMap<String, u16>> {
     }
 }
 
-pub(crate) fn save_ports(ports: BiMap<String, u16>, data_dir: &PathBuf) -> Result<()> {
-    let path = get_portlist_path(data_dir);
+pub(crate) fn save_ports(ports: BiMap<String, u16>, file: &mut File) -> Result<()> {
     let json = serde_json::to_string_pretty(&ports)?;
-    let mut file = File::options().write(true).create(true).open(path)?;
-
-    file.lock()?;
     write!(file, "{json}")?;
-
     Ok(())
 }

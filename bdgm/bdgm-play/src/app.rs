@@ -15,7 +15,7 @@ use crate::{
     args::Args,
     dump::extract_udf_dir,
     error::AppError,
-    server::{create_listener, load_ports, save_ports, serve},
+    server::{create_listener, get_portlist_file, load_ports, save_ports, serve},
 };
 
 #[cfg(windows)]
@@ -164,7 +164,8 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             .status()?,
         bdgm::runtime::Runtime::HTML => {
             println!("Reading saved ports...");
-            let mut ports = load_ports(&app_dirs.data_dir)?;
+            let mut file = get_portlist_file(&app_dirs.data_dir)?;
+            let mut ports = load_ports(&mut file)?;
             let port = ports.get_by_left(game.id());
 
             let listener = match port {
@@ -186,7 +187,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
 
                     ports.insert(game.id().to_string(), listener.local_addr()?.port());
                     println!("Persisting port {}...", listener.local_addr()?.port());
-                    save_ports(ports, &app_dirs.data_dir)?;
+                    save_ports(ports, &mut file)?;
                     listener
                 }
             };
