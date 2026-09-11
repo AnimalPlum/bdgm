@@ -7,6 +7,7 @@ use bdgm::{
 use clap::Parser;
 use fs_extra::dir::{self, CopyOptions};
 use hadris_udf::UdfVolume;
+use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use platform_dirs::AppDirs;
 use tempfile::tempdir;
 
@@ -190,11 +191,11 @@ pub(crate) async fn run() -> anyhow::Result<()> {
                 }
             };
 
-            let address = format!(
-                "http://{}/{}",
-                listener.local_addr()?,
-                executable_str.to_string_lossy()
-            );
+            let executable = executable_str.to_string_lossy();
+            let encoded = utf8_percent_encode(&executable, &ENCODE_SET);
+
+            let address = format!("http://{}/{}", listener.local_addr()?, encoded);
+            println!("Opening {address}");
             webbrowser::open(&address)?;
 
             println!("Running server, press Ctrl + C to stop.");
@@ -228,3 +229,10 @@ pub(crate) async fn run() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+const ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
+    .remove(b'/')
+    .remove(b'-')
+    .remove(b'.')
+    .remove(b'_')
+    .remove(b'~');

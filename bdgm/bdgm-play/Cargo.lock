@@ -144,6 +144,7 @@ dependencies = [
  "clap",
  "fs_extra",
  "hadris-udf",
+ "percent-encoding",
  "platform-dirs",
  "serde",
  "serde_json",
