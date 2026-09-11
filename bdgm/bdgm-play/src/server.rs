@@ -31,7 +31,11 @@ pub(crate) async fn serve(listener: TcpListener, directory: PathBuf) -> Result<(
 
 pub(crate) fn get_portlist_file(data_dir: &PathBuf) -> Result<File> {
     let path = data_dir.join("ports.json");
-    let file = File::options().write(true).create(true).open(path)?;
+    let file = File::options()
+        .write(true)
+        .read(true)
+        .create(true)
+        .open(path)?;
     file.lock()?;
     Ok(file)
 }
@@ -39,7 +43,16 @@ pub(crate) fn get_portlist_file(data_dir: &PathBuf) -> Result<File> {
 pub(crate) fn load_ports(file: &mut File) -> Result<BiMap<String, u16>> {
     let mut json = String::new();
     match file.read_to_string(&mut json) {
-        Ok(_) => serde_json::from_str(&json).map_err(|e| e.into()),
+        Ok(_) => {
+            if json.is_empty() {
+                Ok(BiMap::new())
+            } else {
+                match serde_json::from_str(&json) {
+                    Ok(ports) => Ok(ports),
+                    Err(e) => Err(e.into()),
+                }
+            }
+        }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(BiMap::new()),
         Err(e) => Err(e.into()),
     }
