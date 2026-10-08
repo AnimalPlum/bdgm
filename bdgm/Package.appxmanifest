@@ -12,13 +12,13 @@
   IgnorableNamespaces="uap uap2 uap3 uap10 desktop desktop6 rescap">
 
   <Identity
-    Name="BDGMPlayer"
-    Publisher="CN=yesseruser"
+    Name="25078YesserStudios.BDGMPlayer"
+    Publisher="CN=197534C1-4006-44A2-BFCD-CA87D3F8D948"
     Version="0.4.0.0" />
 
   <Properties>
     <DisplayName>BDGM Player</DisplayName>
-    <PublisherDisplayName>yesseruser</PublisherDisplayName>
+    <PublisherDisplayName>Yesser Studios</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
     <uap10:PackageIntegrity>
       <uap10:Content Enforcement="on"/>
