@@ -11,7 +11,19 @@ See specification at <https://github.com/yesser-studios/bdgm/blob/main/spec.md>.
 
 ### Installation
 
-`bdgm-play` is currently only available on crates.io. To install, you need Cargo and build tools for your platform.
+`bdgm-play` is available on the Microsoft Store and crates.io.
+
+#### Microsoft Store
+
+<a href="https://apps.microsoft.com/detail/9PD4TRWXK7KX?referrer=appbadge&mode=full" target="_blank"  rel="noopener noreferrer">
+    <img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200"/>
+</a>
+
+https://apps.microsoft.com/detail/9PD4TRWXK7KX
+
+#### Cargo (crates.io)
+
+To install, you need Cargo and build tools for your platform.
 ```
 cargo install bdgm-play
 ```
