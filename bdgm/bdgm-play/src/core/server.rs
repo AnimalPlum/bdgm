@@ -1,7 +1,7 @@
 use std::{
     fs::{self, File},
     io::{Read, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
@@ -13,7 +13,7 @@ use platform_dirs::AppDirs;
 use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
 
-use crate::{
+use crate::core::{
     error::AppError,
     fs::{acquire_lock, get_file, get_part_file, truncate},
 };
@@ -37,9 +37,9 @@ pub async fn serve(listener: TcpListener, directory: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-const PORTLIST_FILE_NAME: &'static str = "ports.json";
+const PORTLIST_FILE_NAME: &str = "ports.json";
 
-pub fn get_portlist_file_path(data_dir: &PathBuf) -> PathBuf {
+pub fn get_portlist_file_path(data_dir: &Path) -> PathBuf {
     data_dir.join(PORTLIST_FILE_NAME)
 }
 
@@ -81,12 +81,24 @@ pub fn save_ports(ports: BiMap<String, u16>, lock_file: File, data_dir: &PathBuf
     Ok(())
 }
 
-pub async fn play_html_game(
+pub struct HtmlServerHandle {
+    pub addr: std::net::SocketAddr,
+    pub url: String,
+    pub join: tokio::task::JoinHandle<anyhow::Result<()>>,
+    pub abort: tokio::task::AbortHandle,
+}
+
+/// Start an HTML game server without blocking, returning a handle that can
+/// be aborted to free the port.
+///
+/// Killable primitive for the GUI modal (abort the handle on Stop).
+/// The CLI path just awaits via `play_html_game` (used by `launch::run_game`).
+pub async fn start_html_server(
     game: &ValidatedGame,
-    install_dir: &PathBuf,
+    install_dir: &Path,
     app_dirs: &AppDirs,
     verbose: bool,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<HtmlServerHandle> {
     let lock = acquire_lock(&get_portlist_file_path(&app_dirs.data_dir), true, verbose)?;
     let mut file = get_file(&get_portlist_file_path(&app_dirs.data_dir))?;
     let mut ports = load_ports(&mut file)?;
@@ -103,7 +115,7 @@ pub async fn play_html_game(
             let mut port = listener.local_addr()?.port();
 
             let mut tries = 0;
-            while ports.get_by_right(&&port).is_some() {
+            while ports.get_by_right(&port).is_some() {
                 listener = create_listener(None).await?;
                 port = listener.local_addr()?.port();
 
@@ -124,7 +136,7 @@ pub async fn play_html_game(
     };
 
     let executable = game.executable().to_string_lossy();
-    let encoded = utf8_percent_encode(&executable, &ENCODE_SET);
+    let encoded = utf8_percent_encode(&executable, ENCODE_SET);
 
     let address = format!("http://{}/{}", listener.local_addr()?, encoded);
     if verbose {
@@ -135,7 +147,33 @@ pub async fn play_html_game(
     if verbose {
         println!("Running server, press Ctrl + C to stop.");
     }
-    serve(listener, install_dir).await?;
+    let addr = listener.local_addr()?;
+    let url = address;
+    let dir = install_dir.to_path_buf();
+    let join = tokio::spawn(async move { serve(listener, &dir).await });
+    let abort = join.abort_handle();
+
+    Ok(HtmlServerHandle {
+        addr,
+        url,
+        join,
+        abort,
+    })
+}
+
+/// Start an HTML game and await its server future until it exits.
+///
+/// CLI convenience wrapper over `start_html_server`: start + await.
+/// Aborting the returned handle stops the server so the same persisted
+/// port can be rebound on the next launch.
+pub async fn play_html_game(
+    game: &ValidatedGame,
+    install_dir: &Path,
+    app_dirs: &AppDirs,
+    verbose: bool,
+) -> anyhow::Result<()> {
+    let handle = start_html_server(game, install_dir, app_dirs, verbose).await?;
+    handle.join.await??;
 
     Ok(())
 }

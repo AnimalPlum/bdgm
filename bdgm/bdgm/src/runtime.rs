@@ -32,14 +32,27 @@ impl Display for Runtime {
 
 impl Runtime {
     /// Creates a `Runtime` from the value of the `runtime` field of `DISC.BDGM`.
-    pub fn from_str(str: &str) -> Option<Self> {
-        match str {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
             "java" => Some(Self::Java),
             "dotnet" => Some(Self::Dotnet),
             "python" => Some(Self::Python),
             "windows" => Some(Self::Windows),
             "html" => Some(Self::HTML),
             _ => None,
+        }
+    }
+
+    /// Human-friendly display name for user-facing messages.
+    /// Note: `Windows` maps to `"Wine"` since the native Windows launch
+    /// cannot fail with a missing runtime binary.
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            Self::Java => "Java",
+            Self::Dotnet => ".NET",
+            Self::Python => "Python",
+            Self::Windows => "Wine",
+            Self::HTML => "HTML",
         }
     }
 
