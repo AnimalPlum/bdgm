@@ -29,6 +29,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./bdgm -> target
       - name: Build
         run: cargo build --verbose
         working-directory: ./bdgm
